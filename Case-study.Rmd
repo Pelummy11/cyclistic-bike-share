@@ -1,0 +1,356 @@
+---
+title: "How Does a Bike-Share Navigate Speedy Success?"
+author: "Pelumi"
+date: '2022-04-20'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Loading Packages
+### Loading the tiddyverse,readr,ggplot2,lubridate package
+```{r}
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(lubridate)
+```
+
+## Importing the data 
+```{r}
+may_2021_df <- read.csv("202104-divvy-tripdata.csv")
+june_2021_df <- read.csv("202105-divvy-tripdata.csv")
+july_2021_df <- read.csv("202106-divvy-tripdata.csv")
+august_2021_df <- read.csv("202107-divvy-tripdata.csv")
+september_2021_df <- read.csv("202108-divvy-tripdata.csv")
+october_2021_df <- read.csv("202109-divvy-tripdata.csv")
+november_2021_df <- read.csv("202110-divvy-tripdata.csv")
+december_2021_df <- read.csv("202111-divvy-tripdata.csv")
+january_2022_df <- read.csv("202112-divvy-tripdata.csv")
+february_2022_df <- read.csv("202201-divvy-tripdata.csv")
+march_2022_df <- read.csv("202202-divvy-tripdata.csv")
+april_2022_df <- read.csv("202203-divvy-tripdata.csv")
+```
+## To check for the columns in the dataframes
+```{r}
+colnames(may_2021_df)
+colnames(june_2021_df)
+colnames(july_2021_df)
+colnames(august_2021_df)
+colnames(september_2021_df)
+colnames(october_2021_df)
+colnames(november_2021_df)
+colnames(december_2021_df)
+colnames(january_2022_df)
+colnames(february_2022_df)
+colnames(march_2022_df)
+colnames(april_2022_df)
+```
+
+## Checking dataframe for inconsistencies
+```{r}
+glimpse(may_2021_df)
+glimpse(june_2021_df)
+glimpse(july_2021_df)
+glimpse(august_2021_df)
+glimpse(september_2021_df)
+glimpse(october_2021_df)
+glimpse(november_2021_df)
+glimpse(december_2021_df)
+glimpse(january_2022_df)
+glimpse(february_2022_df)
+glimpse(march_2022_df)
+glimpse(april_2022_df)
+```
+
+## Merging the rows to make anaysis easier 
+
+### Looking at the output,the columns in the dataframe are consistent. The next step is to merge the dataset into a single one. I'll be using the bind_row function to merge the dataframes into a single one
+```{r}
+bike_share_data <- bind_rows(may_2021_df, june_2021_df, july_2021_df, august_2021_df, september_2021_df, october_2021_df, november_2021_df, december_2021_df,january_2022_df, february_2022_df, march_2022_df, april_2022_df)
+```
+
+### Exploring the new dataset
+
+```{r}
+View(bike_share_data)
+dim(bike_share_data)
+glimpse(bike_share_data)
+colnames(bike_share_data)
+```
+
+```{r}
+tibble(bike_share_data)
+```
+
+
+### There are 5,723,532 observations, 13 variables, and null values in the dataframe.
+## Checking for distinct ride type and memeber type using the unique function
+```{r}
+unique(bike_share_data$rideable_type)
+unique(bike_share_data$member_casual)
+```
+
+
+## Checking for duplicate rides
+```{r}
+duplicated(bike_share_data$ride_id)
+
+```
+###Output shows no duplicated value
+
+## Check for negative time values
+```{r}
+bike_share_data %>%
+  filter(ended_at < started_at)%>%
+  count()
+
+```
+### There are 145 negative time values
+### Removing the negative values
+
+```{r}
+bike_share_data <- bike_share_data%>% filter(ended_at > started_at)
+glimpse(bike_share_data)
+
+```
+
+## Removing Null values
+```{r}
+bike_share_data <- bike_share_data %>%
+  na.omit()
+glimpse(bike_share_data)
+```
+
+##Renaming the Variables
+### Renaming the riderable_type variable and the member_casual variable and merging the start long and lat, and the end long and lat
+
+```{r}
+bike_share_data <- bike_share_data %>%
+  rename(bike_type = rideable_type, customer_type = member_casual)
+```
+```{r}
+bike_share_data <- bike_share_data %>%
+unite(start_lat_lng, c("start_lat", "start_lng" ), sep = " ")
+```
+```{r}
+bike_share_data <- bike_share_data %>%
+  unite(end_lat_lng, c("end_lat", "end_lng"), sep = " ")
+```
+```{r}
+glimpse(bike_share_data)
+tibble(bike_share_data)
+```
+## Change the column with datetime values from chr to datetime
+### Didnt chnage it earlier, cause there was a need to merge dataframes, but now that the dataframes have been merged into a single one, theres need to change it, to make it possible to work it.
+
+
+```{r}
+bike_share_data <- bike_share_data %>%
+  mutate(started_at = ymd_hms(started_at), ended_at = ymd_hms(ended_at))
+```
+```{r}
+glimpse(bike_share_data)
+```
+```{r}
+View(bike_share_data)
+```
+### Viewing the dataframe after converting it from chr to datetime, realised there are a lot of null values, so avoid descripancies in calculations, removing the null values
+```{r}
+bike_share_data <- bike_share_data %>%
+  na.omit()
+```
+```{r}
+glimpse(bike_share_data)
+```
+
+## Calculating the day of the week each ride started
+### be extracting the day of the week each ride started from the started_at variable
+
+```{r}
+bike_share_data <- bike_share_data %>%
+  mutate(day_of_week = wday(started_at, label = TRUE, abbr = TRUE))
+```
+### be extracting the month from the started_at variable as well
+```{r}
+bike_share_data <- bike_share_data %>%
+  mutate(month = month(started_at, label = TRUE, abbr = TRUE))
+```
+### extracting the year too
+```{r}
+bike_share_data <- bike_share_data %>%
+  mutate(year = year(started_at))
+```
+```{r}
+tibble(bike_share_data)
+```
+
+## Creating the start_time and end_time variable from the started_at and ended_at variable
+```{r}
+bike_share_data <- bike_share_data %>%
+  mutate(start_time = format(started_at, "%H:%M:%S")) %>%
+  mutate(end_time = format(ended_at, "%H:%M:%S"))
+```
+### Converting the time variable into the datatype
+```{r}
+bike_share_data <- bike_share_data %>%
+ mutate(start_time = hms(start_time)) %>%
+  mutate(end_time = hms(end_time))
+```
+```{r}
+glimpse(bike_share_data)
+```
+```{r}
+tibble(bike_share_data)
+```
+
+## Creating a variable that calculates the length of each ride
+
+```{r}
+bike_share_data$ride_length <- difftime(bike_share_data$ended_at, bike_share_data$started_at, units = "mins")
+```
+```{r}
+View(bike_share_data)
+```
+```{r}
+head(bike_share_data)
+```
+
+## ANALYSIS
+### Number of rides per month
+```{r}
+rides_per_month_df <- bike_share_data %>%
+  select(customer_type, month) %>%
+  group_by(month, customer_type)%>%
+  count() %>%
+  arrange()
+```
+```{r}
+head(rides_per_month_df)
+```
+### Graph  showing the number of Rides for each month
+```{r}
+ggplot(data = rides_per_month_df,  aes(x = month, y = n,  fill = month))  + geom_col() + facet_wrap(~customer_type) + labs(title = "Number of Rides per Month", x = "Month", y = "Count")
+```
+
+
+
+### Total Number of Casual members and Memberships
+```{r}
+df_members <- bike_share_data %>%
+  select(customer_type) %>%
+  group_by(customer_type) %>%
+  count() %>%
+  arrange()
+```
+```{r}
+head(df_members)
+```
+
+### Graph showing Casual and Member Rider
+```{r}
+ggplot(data = bike_share_data) + geom_bar(mapping = aes(x = customer_type, fill = customer_type)) + labs(title = "Customer Type", x = "Customer type", y = "Count")
+```
+
+
+### Total Number of bike type per month
+```{r}
+bike_type_month <- bike_share_data %>%
+  select(bike_type, month) %>%
+  group_by(month, bike_type)%>%
+  count() %>%
+  arrange()
+```
+```{r}
+head(bike_type_month)
+```
+### Graph of Bike type per Month
+```{r}
+ggplot(data = bike_share_data) + geom_bar(mapping = aes(x = bike_type, fill = bike_type)) + facet_wrap(~customer_type) + labs(title = "Bike Type per Month", x = "Bike_Type", y = "Count")
+```
+
+## Total number of Riders per Weekday
+```{r}
+df_weekday <- bike_share_data %>%
+  select(customer_type, day_of_week) %>%
+group_by(day_of_week, customer_type) %>%
+  count()%>%
+  arrange()
+head(df_weekday)
+```
+### Graph of Number of Riders per weekday
+```{r}
+ggplot(data = bike_share_data) + geom_bar(mapping = aes(x = day_of_week, fill = day_of_week)) + facet_wrap(~customer_type) + labs(title = "Riders per Weekday", x = "Weekday", y = "Count")
+```
+
+### Maximun ride length
+```{r}
+bike_share_data %>%
+ select(ride_length) %>%
+  summarise(max_ride_length = max(ride_length))
+```
+### Minimum ride length
+```{r}
+bike_share_data %>%
+  select(ride_length) %>%
+  summarise(min_ride_length = min(ride_length))
+```
+ 
+ 
+## Average ride length
+```{r}
+bike_share_data %>%
+  select(customer_type,ride_length) %>%
+  summarise(mean_ride_length = mean(ride_length))
+```
+
+## Create a dataframe for only Casual riders
+```{r}
+df_casual <- bike_share_data %>%
+  filter(customer_type == "casual")
+```
+### Minimum ride_length for Casual riders
+```{r}
+df_casual %>%
+  select(ride_length) %>%
+  summarise(min_casual = min(ride_length))
+```
+### Maximum ride length for Casual riders
+```{r}
+df_casual %>%
+  select(ride_length) %>%
+  summarise(max_casual = max(ride_length))
+```
+### Average ride length for Casual member
+```{r}
+df_casual %>%
+  select(ride_length) %>%
+summarise(mean_ride_length = mean(ride_length))
+```
+
+
+## Create a dataframe for only member riders
+
+```{r}
+df_member_rider <- bike_share_data %>%
+  filter(customer_type == "member")
+```
+### Max ride_length for Member riders
+```{r}
+df_member_rider %>%
+  select(ride_length) %>%
+summarise(min_ride_length = min(ride_length))
+```
+### Average ride_length for Member riders
+```{r}
+df_member_rider %>%
+  select(ride_length) %>%
+summarise(mean_ride_length = mean(ride_length))
+```
+
+
+```
+
+
+
+
